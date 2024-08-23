@@ -50,10 +50,13 @@ function M.redis_connect()
 	if not ok then
 		return nil, 51 
 	end
-	local res, err = red:auth(config['redis']['password'])
-	if not res then
-		return nil, 51
-	end
+        if config['redis']['password'] ~= '' then
+	        local res, err = red:auth(config['redis']['password'])
+	        if not res then
+		    return nil, 51
+	        end
+        end
+        red:select(config['redis']['db'])
 	return red
 end
 
@@ -123,7 +126,7 @@ function M.show_error(err_code, long_url)
 	ngx.exit(ngx.HTTP_OK)
 end
 
-function M.url_create(long_url, short_string)
+function M.url_create(long_url, short_string, expire_time)
 	local red, err = M.redis_connect()
 	if err then
 		return false, err
@@ -140,6 +143,7 @@ function M.url_create(long_url, short_string)
 	if err then
 		return nil, err
 	end
+	--[[
 	local last, err = red:get('V_last')
 	if err or last==ngx.NULL then
 		return nil, 52
@@ -148,9 +152,34 @@ function M.url_create(long_url, short_string)
 	if err then
 		return nil, err
 	end
+	--]]
+	
+	-- 如果没有提供 short_string，则生成一个新的短网址字符串
+	if not short_string then
+		-- 从 Redis 中获取最后一个短网址的值
+		local last, err = red:get('V_last')
+		if err or last == ngx.NULL then
+			return nil, 52
+		end
+	
+		-- 生成一个新的短网址字符串
+		short_string, err = M.get_short_string(last)
+		if err then
+			return nil, err
+		end
+	
+		-- 更新 Redis 中的最后一个短网址的值
+		red:set('V_last', short_string)
+	end
+	
 	red:set('M_' .. url_md5, short_string)
-	red:set('V_last', short_string)
 	red:set('S_' .. short_string, long_url)
+	
+	if expire_time then
+		red:expire('M_' .. url_md5, expire_time)
+		red:expire('S_' .. short_string, expire_time)
+	end
+	
 	red:set_keepalive(10000, 100)
 	return config['domain']..short_string
 end

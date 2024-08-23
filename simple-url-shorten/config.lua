@@ -16,7 +16,8 @@ local base_str = table.concat( base_table, "")
 local redis = {}
 redis['host'] = '127.0.0.1'
 redis['port'] = 6379
-redis['password'] = 'passwd'
+redis['password'] = ''
+redis['db'] = 0
 
 
 -- Initial Short URL
@@ -39,7 +40,7 @@ redis['password'] = 'passwd'
 -- 14 ->  12401769434657526912139264
 -- 15 ->  768909704948766668552634368
 -- 16 ->  47672401706823533450263330816
-local start_url = {'0','0','0','0'}
+local start_url = {'d','3','s','k','a','b'}
 
 -- Short URL's prefix
 -- Default is NULL
@@ -50,7 +51,7 @@ local suffix = ''
 
 -- Domain for short URL
 -- if is empty,will return short string
-local domain = 'http://192.168.56.201/'
+local domain = 'https://t.csfrez.com/'
 
 -- White list of domain
 -- Host just as:  www.example.com:8081
